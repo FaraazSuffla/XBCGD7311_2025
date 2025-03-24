@@ -442,14 +442,22 @@ MonoBehaviour:
   turnSpeed: 50
   acceleration: 5
   deceleration: 8
-  leanAngle: 15
-  leanSpeed: 5
+  hopForce: 7
+  turboBoost: 1.5
+  turboDuration: 2
+  wheelieAngle: 15
+  leanAngle: 25
+  leanSpeed: 8
   dustParticles: {fileID: 0}
+  bikeModel: {fileID: 543450652040497258}
   motorSound: {fileID: 0}
+  jumpSound: {fileID: 0}
+  turboSound: {fileID: 0}
   minPitch: 0.8
-  maxPitch: 1.3
+  maxPitch: 1.5
   limitSpeedByBattery: 1
   minSpeedMultiplier: 0.5
+  turboBatteryCost: 20
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -513,7 +521,7 @@ GameObject:
   - component: {fileID: 1692081789}
   m_Layer: 0
   m_Name: Plane
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

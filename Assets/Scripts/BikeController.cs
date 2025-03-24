@@ -10,19 +10,31 @@ public class BikeController : MonoBehaviour
     public float deceleration = 8f;
     private float currentSpeed = 0f;
 
+    [Header("New Fun Features")]
+    public float hopForce = 7f;
+    public float turboBoost = 1.5f;
+    public float turboDuration = 2f;
+    public float wheelieAngle = 15f;
+    private float turboTimeRemaining = 0f;
+    private bool isGrounded = true;
+
     [Header("Visual Effects")]
     public float leanAngle = 15f;
     public float leanSpeed = 5f;
     public ParticleSystem dustParticles;
+    public Transform bikeModel; // Assign bike visual transform here
 
     [Header("Audio")]
     public AudioSource motorSound;
+    public AudioSource jumpSound;
+    public AudioSource turboSound;
     public float minPitch = 0.8f;
     public float maxPitch = 1.3f;
 
     [Header("Battery Limitation")]
     public bool limitSpeedByBattery = true;
     public float minSpeedMultiplier = 0.5f;
+    public float turboBatteryCost = 20f;
 
     private BatteryManager batteryManager;
     private Rigidbody rb;
@@ -43,6 +55,7 @@ public class BikeController : MonoBehaviour
             HandleLean();
             HandleAudioFeedback();
             HandleParticles();
+            HandleNewFeatures();
         }
         else
         {
@@ -54,6 +67,13 @@ public class BikeController : MonoBehaviour
     void HandleMovement()
     {
         float targetSpeed = Input.GetAxis("Vertical") * speed;
+        
+        // Apply turbo boost if active
+        if (turboTimeRemaining > 0)
+        {
+            targetSpeed *= turboBoost;
+            turboTimeRemaining -= Time.deltaTime;
+        }
         
         // Apply battery speed limitation
         if (limitSpeedByBattery)
@@ -76,6 +96,32 @@ public class BikeController : MonoBehaviour
         float turn = Input.GetAxis("Horizontal") * turnSpeed * Time.deltaTime;
         float turnMultiplier = 1 + Mathf.Abs(currentSpeed / speed) * 0.5f;
         transform.Rotate(0, turn * turnMultiplier, 0);
+    }
+
+    void HandleNewFeatures()
+    {
+        // Jump/Hop
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            rb.AddForce(Vector3.up * hopForce, ForceMode.Impulse);
+            if (jumpSound != null) jumpSound.Play();
+            isGrounded = false;
+        }
+
+        // Turbo Boost
+        if (Input.GetKeyDown(KeyCode.LeftShift) && batteryManager.currentBattery >= turboBatteryCost)
+        {
+            turboTimeRemaining = turboDuration;
+            batteryManager.currentBattery -= turboBatteryCost;
+            if (turboSound != null) turboSound.Play();
+        }
+
+        // Wheelie effect when accelerating hard
+        if (bikeModel != null)
+        {
+            float wheelieTilt = Mathf.Clamp(Input.GetAxis("Vertical") * wheelieAngle, 0, wheelieAngle);
+            bikeModel.localRotation = Quaternion.Euler(wheelieTilt, bikeModel.localEulerAngles.y, bikeModel.localEulerAngles.z);
+        }
     }
 
     void HandleLean()
@@ -113,9 +159,16 @@ public class BikeController : MonoBehaviour
         }
     }
 
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;
+        }
+    }
+
     void OnDisable()
     {
-        // Reset rumble if using gamepad
         if (Gamepad.current != null) Gamepad.current.SetMotorSpeeds(0, 0);
     }
 }
