@@ -1,19 +1,29 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class BatteryManager : MonoBehaviour
 {
-    public float maxBattery = 100f; // Maximum battery capacity
-    public float currentBattery; // Current battery level
-    public float consumptionRate = 0.5f; // Battery consumption per second
-    public float rechargeRate = 5f; // Battery recharge per second
-    public bool isCharging = false; // Is the bike charging?
+    [Header("Battery Settings")]
+    public float maxBattery = 100f;
+    public float currentBattery;
+    public float consumptionRate = 0.5f;
+    public float rechargeRate = 5f;
+    public bool isCharging = false;
 
-    public Text batteryText; // UI Text to display battery level
+    [Header("UI")]
+    public Text batteryText;
+    public Image batteryFill;
+    public Color fullColor = Color.green;
+    public Color emptyColor = Color.red;
+
+    [Header("Events")]
+    public UnityEvent onBatteryDepleted;
+    public UnityEvent onBatteryFull;
 
     void Start()
     {
-        currentBattery = maxBattery; // Start with a full battery
+        currentBattery = maxBattery;
         UpdateBatteryUI();
     }
 
@@ -21,46 +31,38 @@ public class BatteryManager : MonoBehaviour
     {
         if (!isCharging)
         {
-            // Consume battery while moving
             if (Input.GetAxis("Vertical") != 0 || Input.GetAxis("Horizontal") != 0)
             {
                 currentBattery -= consumptionRate * Time.deltaTime;
-                currentBattery = Mathf.Clamp(currentBattery, 0, maxBattery); // Ensure battery doesn't go below 0
+                currentBattery = Mathf.Clamp(currentBattery, 0, maxBattery);
             }
         }
         else
         {
-            // Recharge the battery
             currentBattery += rechargeRate * Time.deltaTime;
-            currentBattery = Mathf.Clamp(currentBattery, 0, maxBattery); // Ensure battery doesn't exceed max
+            currentBattery = Mathf.Clamp(currentBattery, 0, maxBattery);
+            
+            if (currentBattery >= maxBattery) onBatteryFull.Invoke();
         }
 
-        // Update the battery UI
         UpdateBatteryUI();
 
-        // Check if the battery is empty
-        if (currentBattery <= 0)
-        {
-            Debug.Log("Battery is dead!");
-            // Disable bike movement or trigger a game over
-        }
+        if (currentBattery <= 0) onBatteryDepleted.Invoke();
     }
 
     void UpdateBatteryUI()
     {
         if (batteryText != null)
-        {
             batteryText.text = "Battery: " + currentBattery.ToString("F1") + "%";
+        
+        if (batteryFill != null)
+        {
+            float fillAmount = currentBattery / maxBattery;
+            batteryFill.fillAmount = fillAmount;
+            batteryFill.color = Color.Lerp(emptyColor, fullColor, fillAmount);
         }
     }
 
-    public void StartCharging()
-    {
-        isCharging = true;
-    }
-
-    public void StopCharging()
-    {
-        isCharging = false;
-    }
+    public void StartCharging() => isCharging = true;
+    public void StopCharging() => isCharging = false;
 }
