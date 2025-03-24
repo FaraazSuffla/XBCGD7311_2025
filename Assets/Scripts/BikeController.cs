@@ -3,6 +3,13 @@ using UnityEngine.InputSystem;
 
 public class BikeController : MonoBehaviour
 {
+    public float CurrentSpeed => currentSpeed;
+    public float TurboTimeRemaining => turboTimeRemaining;
+    public bool IsGrounded => isGrounded;
+    
+    public bool IsWheeling => bikeModel != null && bikeModel.localEulerAngles.x > 5f;
+    
+    
     [Header("Movement Settings")]
     public float speed = 10f;
     public float turnSpeed = 50f;
