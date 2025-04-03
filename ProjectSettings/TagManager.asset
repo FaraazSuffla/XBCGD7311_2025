@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 3
   tags:
   - Ground
+  - Package
+  - DeliveryPoint
   layers:
   - Default
   - TransparentFX

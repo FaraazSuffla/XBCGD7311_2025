@@ -9,6 +9,9 @@ public class BikeController : MonoBehaviour
     
     public bool IsWheeling => bikeModel != null && bikeModel.localEulerAngles.x > 5f;
     
+    private bool hasPackage;
+
+    
     
     [Header("Movement Settings")]
     public float speed = 10f;
@@ -177,5 +180,27 @@ public class BikeController : MonoBehaviour
     void OnDisable()
     {
         if (Gamepad.current != null) Gamepad.current.SetMotorSpeeds(0, 0);
+    }
+    
+    void OnTriggerEnter(Collider other)
+    {
+        // Pick up package
+        if (other.CompareTag("Package") && !hasPackage)
+        {
+            Destroy(other.gameObject);
+            hasPackage = true;
+            Debug.Log("Package picked up!");
+        }
+
+        // Deliver package
+        if (other.CompareTag("DeliveryPoint") && hasPackage)
+        {
+            DeliveryManager deliveryManager = FindFirstObjectByType<DeliveryManager>();
+            if (deliveryManager != null)
+            {
+                deliveryManager.TryDeliverPackage(other.transform);
+                hasPackage = false;
+            }
+        }
     }
 }
