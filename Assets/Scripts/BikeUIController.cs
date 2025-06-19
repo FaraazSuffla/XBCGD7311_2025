@@ -67,8 +67,9 @@ public class BikeUIController : MonoBehaviour
     {
         if (!bikeController || !speedText || !speedNeedle) return;
         
-        float speedRatio = Mathf.Abs(bikeController.CurrentSpeed) / bikeController.speed;
-        speedText.text = Mathf.RoundToInt(bikeController.CurrentSpeed).ToString() + " km/h";
+        // Use SpeedKmh property for display and maxSpeed for ratio calculation
+        float speedRatio = Mathf.Abs(bikeController.CurrentSpeed) / bikeController.maxSpeed;
+        speedText.text = Mathf.RoundToInt(bikeController.SpeedKmh).ToString() + " km/h";
         
         // Rotate needle based on speed
         float needleAngle = Mathf.Lerp(minNeedleAngle, maxNeedleAngle, speedRatio);
