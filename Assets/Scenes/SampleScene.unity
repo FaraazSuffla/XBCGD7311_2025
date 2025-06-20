@@ -5320,6 +5320,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: e bike
       objectReference: {fileID: 0}
+    - target: {fileID: 4438212407021633174, guid: e12c93d9fe8c51748bd07155eedbe0db, type: 3}
+      propertyPath: shakeDecay
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4438212407021633174, guid: e12c93d9fe8c51748bd07155eedbe0db, type: 3}
+      propertyPath: landingShakeForce
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4438212407021633174, guid: e12c93d9fe8c51748bd07155eedbe0db, type: 3}
+      propertyPath: engineShakeIntensity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8134337457976523093, guid: e12c93d9fe8c51748bd07155eedbe0db, type: 3}
       propertyPath: batteryFill
       value: 
@@ -5358,26 +5370,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6bd331efed290834db771d52ef48f978, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
-  turnSpeed: 50
+  maxSpeed: 15
   acceleration: 5
   deceleration: 8
+  brakeForce: 20
+  turnSpeed: 50
+  turnSpeedAtSpeed: 1.5
+  downForce: 100
+  centerOfMassOffset: -0.5
+  traction: 1
+  airDrag: 0.98
+  groundDrag: 0.95
   hopForce: 7
   turboBoost: 1.5
   turboDuration: 2
+  turboCooldown: 8
   wheelieAngle: 15
+  wheelieSpeedThreshold: 0.3
   leanAngle: 15
   leanSpeed: 5
+  bobbingAmplitude: 0.1
+  bobbingFrequency: 2
   dustParticles: {fileID: 0}
+  turboParticles: {fileID: 0}
   bikeModel: {fileID: 0}
   motorSound: {fileID: 0}
   jumpSound: {fileID: 0}
   turboSound: {fileID: 0}
+  brakeSound: {fileID: 0}
+  packagePickupSound: {fileID: 0}
+  packageDeliverySound: {fileID: 0}
   minPitch: 0.8
   maxPitch: 1.3
+  motorVolume: 0.5
   limitSpeedByBattery: 1
   minSpeedMultiplier: 0.5
   turboBatteryCost: 20
+  movementBatteryMultiplier: 1.2
+  inputDeadzone: 0.1
+  inputSensitivity: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
