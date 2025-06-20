@@ -20,10 +20,30 @@ public class DeliveryManager : MonoBehaviour
     private float currentTimeLeft;
     private bool isDeliveryActive;
     private float currentReward;
+    private DeliveryPointVisualizer[] allVisualizers;
+
+    // Public properties for other scripts to access
+    public bool IsDeliveryActive => isDeliveryActive;
+    public Transform CurrentDeliveryPoint => currentDeliveryPoint;
+    public float TimeRemaining => currentTimeLeft;
 
     void Start()
     {
+        InitializeVisualizers();
         StartNewDelivery();
+    }
+
+    void InitializeVisualizers()
+    {
+        // Get all delivery point visualizers
+        allVisualizers = new DeliveryPointVisualizer[deliveryPoints.Length];
+        for (int i = 0; i < deliveryPoints.Length; i++)
+        {
+            if (deliveryPoints[i] != null)
+            {
+                allVisualizers[i] = deliveryPoints[i].GetComponent<DeliveryPointVisualizer>();
+            }
+        }
     }
 
     void Update()
@@ -36,23 +56,71 @@ public class DeliveryManager : MonoBehaviour
 
     public void StartNewDelivery()
     {
+        // Clean up previous package
+        if (currentPackage != null)
+        {
+            Destroy(currentPackage);
+        }
+
+        // Deactivate all delivery points
+        DeactivateAllDeliveryPoints();
+
         // Spawn package at a random point (or bike's location)
-        currentPackage = Instantiate(packagePrefab, transform.position, Quaternion.identity);
+        BikeController playerBike = FindFirstObjectByType<BikeController>();
+        Vector3 spawnPosition = transform.position;
+        if (playerBike != null)
+        {
+            spawnPosition = playerBike.transform.position + Vector3.up * 2f;
+        }
+        
+        currentPackage = Instantiate(packagePrefab, spawnPosition, Quaternion.identity);
         
         // Choose a random delivery point
-        currentDeliveryPoint = deliveryPoints[Random.Range(0, deliveryPoints.Length)];
-        deliveryInstructions.text = "Deliver to: " + currentDeliveryPoint.name;
+        int randomIndex = Random.Range(0, deliveryPoints.Length);
+        currentDeliveryPoint = deliveryPoints[randomIndex];
+        
+        // Activate the selected delivery point
+        if (allVisualizers[randomIndex] != null)
+        {
+            allVisualizers[randomIndex].SetAsActiveDeliveryPoint(true);
+        }
+        
+        // Update UI
+        if (deliveryInstructions != null)
+        {
+            string locationName = currentDeliveryPoint.name.Replace("DeliveryPoint_", "");
+            deliveryInstructions.text = "Deliver to: " + locationName;
+        }
 
         // Reset timer and reward
         currentTimeLeft = timeLimitPerDelivery;
         currentReward = baseReward;
         isDeliveryActive = true;
+
+        Debug.Log($"New delivery started: {currentDeliveryPoint.name}");
+    }
+
+    void DeactivateAllDeliveryPoints()
+    {
+        foreach (var visualizer in allVisualizers)
+        {
+            if (visualizer != null)
+            {
+                visualizer.SetAsActiveDeliveryPoint(false);
+            }
+        }
     }
 
     void UpdateTimer()
     {
         currentTimeLeft -= Time.deltaTime;
-        timerText.text = "Time: " + Mathf.RoundToInt(currentTimeLeft).ToString() + "s";
+        
+        if (timerText != null)
+        {
+            int minutes = Mathf.FloorToInt(currentTimeLeft / 60);
+            int seconds = Mathf.FloorToInt(currentTimeLeft % 60);
+            timerText.text = $"Time: {minutes:00}:{seconds:00}";
+        }
 
         if (currentTimeLeft <= 0)
         {
@@ -67,8 +135,22 @@ public class DeliveryManager : MonoBehaviour
         currentReward += timeBonus;
 
         // Update UI
-        rewardText.text = "Reward: $" + currentReward.ToString("F0");
-        Destroy(currentPackage);
+        if (rewardText != null)
+        {
+            rewardText.text = "Reward: $" + currentReward.ToString("F0");
+            rewardText.color = Color.green;
+        }
+
+        // Deactivate current delivery point
+        DeactivateAllDeliveryPoints();
+
+        // Clean up
+        if (currentPackage != null)
+        {
+            Destroy(currentPackage);
+        }
+
+        Debug.Log($"Delivery completed! Reward: ${currentReward:F0}");
 
         // Start next delivery after a delay
         Invoke("StartNewDelivery", 2f);
@@ -78,7 +160,23 @@ public class DeliveryManager : MonoBehaviour
     void FailDelivery()
     {
         Debug.Log("Delivery failed! Too slow.");
-        Destroy(currentPackage);
+        
+        // Update UI
+        if (rewardText != null)
+        {
+            rewardText.text = "Delivery Failed!";
+            rewardText.color = Color.red;
+        }
+
+        // Deactivate delivery points
+        DeactivateAllDeliveryPoints();
+
+        // Clean up
+        if (currentPackage != null)
+        {
+            Destroy(currentPackage);
+        }
+
         Invoke("StartNewDelivery", 2f);
         isDeliveryActive = false;
     }
@@ -88,7 +186,16 @@ public class DeliveryManager : MonoBehaviour
     {
         if (isDeliveryActive && deliveryPoint == currentDeliveryPoint)
         {
-            CompleteDelivery();
+            // Check if player has package
+            BikeController playerBike = FindFirstObjectByType<BikeController>();
+            if (playerBike != null && playerBike.HasPackage)
+            {
+                CompleteDelivery();
+            }
+            else
+            {
+                Debug.Log("Cannot deliver - no package picked up!");
+            }
         }
     }
 }
