@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using TMPro;
@@ -27,6 +27,11 @@ public class BatteryManager : MonoBehaviour
     public UnityEvent onBatteryFull;
     public UnityEvent onBatteryChanged;
 
+    [Header("Charging Station Detection")]
+    public Transform chargingStationPosition; // Where the player should stand to charge
+    public float chargeActivationRange = 3f;   // How close to activate charging
+    private bool isInChargingZone = false;
+
     void Start()
     {
         currentBattery = maxBattery;
@@ -35,6 +40,8 @@ public class BatteryManager : MonoBehaviour
 
     void Update()
     {
+        HandleChargingInput();
+
         if (!isCharging)
         {
             // Consume battery when moving
@@ -57,24 +64,55 @@ public class BatteryManager : MonoBehaviour
         CheckBatteryEvents();
     }
 
+    void HandleChargingInput()
+    {
+        if (chargingStationPosition == null)
+        {
+            Debug.LogWarning("🔋 Charging station position not assigned!");
+            return;
+        }
+
+        float distanceToStation = Vector3.Distance(transform.position, chargingStationPosition.position);
+
+        if (distanceToStation <= chargeActivationRange)
+        {
+            if (!isInChargingZone)
+            {
+                Debug.Log("⚡ Entered charging zone.");
+                isInChargingZone = true;
+            }
+
+            if (Input.GetKeyDown(KeyCode.E)) // Change or remove input if you auto-start
+            {
+                StartCharging();
+            }
+        }
+        else
+        {
+            if (isInChargingZone)
+            {
+                Debug.Log("🛑 Exited charging zone.");
+                isInChargingZone = false;
+                StopCharging();
+            }
+        }
+    }
+
     void UpdateBatteryUI()
     {
         float batteryPercent = currentBattery / maxBattery;
 
-        // Update fill amount and color
         if (batteryFill != null)
         {
             batteryFill.fillAmount = batteryPercent;
             batteryFill.color = batteryGradient.Evaluate(batteryPercent);
         }
 
-        // Update percentage text
         if (batteryPercentageText != null)
         {
             batteryPercentageText.text = Mathf.RoundToInt(batteryPercent * 100) + "%";
         }
 
-        // Handle low battery warning
         if (lowBatteryWarning != null)
         {
             if (batteryPercent < 0.2f && !isCharging)
@@ -120,14 +158,15 @@ public class BatteryManager : MonoBehaviour
     public void StartCharging()
     {
         isCharging = true;
+        Debug.Log("🔋 Charging started.");
     }
 
     public void StopCharging()
     {
         isCharging = false;
+        Debug.Log("🛑 Charging stopped.");
     }
 
-    // For debugging/cheats
     public void SetBattery(float amount)
     {
         currentBattery = Mathf.Clamp(amount, 0, maxBattery);
