@@ -68,23 +68,35 @@ public class DeliveryManager : MonoBehaviour
         // Spawn package at a random point (or bike's location)
         BikeController playerBike = FindFirstObjectByType<BikeController>();
         Vector3 spawnPosition = transform.position;
+
         if (playerBike != null)
         {
-            spawnPosition = playerBike.transform.position + Vector3.up * 2f;
+            // Spawn 2 units in front of the player, aligned with ground level
+            Vector3 desiredSpawn = playerBike.transform.position + playerBike.transform.forward * 5f;
+
+            // Raycast down to find ground height
+            if (Physics.Raycast(desiredSpawn, Vector3.down, out RaycastHit hitInfo, 10f))
+            {
+                spawnPosition = hitInfo.point;
+            }
+            else
+            {
+                spawnPosition = desiredSpawn;
+            }
         }
-        
+
         currentPackage = Instantiate(packagePrefab, spawnPosition, Quaternion.identity);
-        
+
         // Choose a random delivery point
         int randomIndex = Random.Range(0, deliveryPoints.Length);
         currentDeliveryPoint = deliveryPoints[randomIndex];
-        
+
         // Activate the selected delivery point
         if (allVisualizers[randomIndex] != null)
         {
             allVisualizers[randomIndex].SetAsActiveDeliveryPoint(true);
         }
-        
+
         // Update UI
         if (deliveryInstructions != null)
         {
@@ -114,7 +126,7 @@ public class DeliveryManager : MonoBehaviour
     void UpdateTimer()
     {
         currentTimeLeft -= Time.deltaTime;
-        
+
         if (timerText != null)
         {
             int minutes = Mathf.FloorToInt(currentTimeLeft / 60);
@@ -160,7 +172,7 @@ public class DeliveryManager : MonoBehaviour
     void FailDelivery()
     {
         Debug.Log("Delivery failed! Too slow.");
-        
+
         // Update UI
         if (rewardText != null)
         {
