@@ -16,9 +16,7 @@ public class BikeUIController : MonoBehaviour
     public float minNeedleAngle = 90f;
     public float maxNeedleAngle = -90f;
 
-    [Header("Turbo Display")]
-    public Image turboCooldownFill;
-    public GameObject turboActiveIndicator;
+    // Turbo UI removed
 
     [Header("Status Effects")]
     public GameObject wheelieIndicator;
@@ -32,9 +30,8 @@ public class BikeUIController : MonoBehaviour
     {
         bikeController = FindFirstObjectByType<BikeController>();
         batteryManager = FindFirstObjectByType<BatteryManager>();
-        
+
         if (lowBatteryWarning) lowBatteryWarning.SetActive(false);
-        if (turboActiveIndicator) turboActiveIndicator.SetActive(false);
         if (wheelieIndicator) wheelieIndicator.SetActive(false);
         if (airTimeText) airTimeText.gameObject.SetActive(false);
     }
@@ -43,7 +40,6 @@ public class BikeUIController : MonoBehaviour
     {
         UpdateBatteryUI();
         UpdateSpeedUI();
-        UpdateTurboUI();
         UpdateStatusEffects();
     }
 
@@ -54,10 +50,10 @@ public class BikeUIController : MonoBehaviour
             float fillAmount = batteryManager.currentBattery / batteryManager.maxBattery;
             batteryFill.fillAmount = fillAmount;
             batteryFill.color = batteryGradient.Evaluate(fillAmount);
-            
+
             if (batteryPercentText)
                 batteryPercentText.text = Mathf.RoundToInt(fillAmount * 100) + "%";
-            
+
             if (lowBatteryWarning)
                 lowBatteryWarning.SetActive(fillAmount < 0.2f);
         }
@@ -66,43 +62,24 @@ public class BikeUIController : MonoBehaviour
     void UpdateSpeedUI()
     {
         if (!bikeController || !speedText || !speedNeedle) return;
-        
-        // Use SpeedKmh property for display and maxSpeed for ratio calculation
+
         float speedRatio = Mathf.Abs(bikeController.CurrentSpeed) / bikeController.maxSpeed;
         speedText.text = Mathf.RoundToInt(bikeController.SpeedKmh).ToString() + " km/h";
-        
-        // Rotate needle based on speed
+
         float needleAngle = Mathf.Lerp(minNeedleAngle, maxNeedleAngle, speedRatio);
         speedNeedle.rotation = Quaternion.Euler(0, 0, needleAngle);
-    }
-
-    void UpdateTurboUI()
-    {
-        if (!bikeController || !turboCooldownFill) return;
-        
-        if (turboCooldownFill)
-        {
-            turboCooldownFill.fillAmount = bikeController.TurboTimeRemaining / bikeController.turboDuration;
-        }
-        
-        if (turboActiveIndicator)
-        {
-            turboActiveIndicator.SetActive(bikeController.TurboTimeRemaining > 0);
-        }
     }
 
     void UpdateStatusEffects()
     {
         if (!bikeController) return;
-        
-        // Wheelie indicator
+
         if (wheelieIndicator)
         {
             bool isWheeling = Input.GetAxis("Vertical") > 0.8f && bikeController.IsGrounded;
             wheelieIndicator.SetActive(isWheeling);
         }
-        
-        // Air time counter
+
         if (airTimeText)
         {
             if (!bikeController.IsGrounded)
@@ -115,7 +92,6 @@ public class BikeUIController : MonoBehaviour
             {
                 if (airTime > 1f)
                 {
-                    // Show big air notification
                     Debug.Log("Big air! " + airTime.ToString("F1") + " seconds");
                 }
                 airTime = 0f;

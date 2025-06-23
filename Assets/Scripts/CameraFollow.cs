@@ -26,7 +26,7 @@ public class CameraFollow : MonoBehaviour
     public float speedTransitionSpeed = 2f;
     public float baseFOV = 60f;
     public float speedFOVIncrease = 15f;
-    public float turboFOVBoost = 10f;
+    // Removed turboFOVBoost
     public float fovTransitionSpeed = 3f;
 
     [Header("Camera Shake")]
@@ -87,7 +87,6 @@ public class CameraFollow : MonoBehaviour
             lastTargetPosition = target.position;
         }
 
-        // Lock cursor for mouse look
         if (enableMouseLook)
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -110,16 +109,12 @@ public class CameraFollow : MonoBehaviour
         Vector3 desiredPosition = CalculateDesiredPosition();
         desiredPosition = HandleCameraCollision(desiredPosition);
 
-        // Apply camera shake
         desiredPosition += shakeOffset;
 
-        // Smoothly move the camera
         transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothSpeed * Time.deltaTime);
 
-        // Handle rotation
         HandleCameraRotation();
 
-        // Update FOV
         UpdateFieldOfView();
     }
 
@@ -127,13 +122,11 @@ public class CameraFollow : MonoBehaviour
     {
         HandleMouseLook();
 
-        // Reset camera to auto-follow
         if (Input.GetKeyDown(resetCameraKey))
         {
             ResetCamera();
         }
 
-        // Toggle cursor lock/unlock
         if (Input.GetKeyDown(KeyCode.LeftAlt))
         {
             ToggleCursorLock();
@@ -147,28 +140,24 @@ public class CameraFollow : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X") * mouseXSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseYSensitivity * (invertY ? 1f : -1f);
 
-        // Check if mouse is being moved
         if (Mathf.Abs(mouseX) > 0.1f || Mathf.Abs(mouseY) > 0.1f)
         {
             manualRotationInput.x += mouseX;
             manualRotationInput.y += mouseY;
 
-            // Clamp the manual rotation
             manualRotationInput.x = Mathf.Clamp(manualRotationInput.x, -maxHorizontalAngle, maxHorizontalAngle);
             manualRotationInput.y = Mathf.Clamp(manualRotationInput.y, -maxVerticalAngle, maxVerticalAngle);
 
-            manualControlTimer = 2f; // Reset decay timer
+            manualControlTimer = 2f;
             isManualControl = true;
         }
 
-        // Decay manual control over time
         if (manualControlTimer > 0)
         {
             manualControlTimer -= Time.deltaTime;
         }
         else if (isManualControl)
         {
-            // Gradually return to auto follow
             manualRotationInput = Vector2.Lerp(manualRotationInput, Vector2.zero, manualControlDecay * Time.deltaTime);
 
             if (manualRotationInput.magnitude < 0.1f)
@@ -190,29 +179,20 @@ public class CameraFollow : MonoBehaviour
     {
         if (bikeController != null)
         {
-            // Normalize speed to a 0-1 ratio (based on 50 km/h max for camera effects)
             float speedRatio = Mathf.Clamp01(bikeController.SpeedKmh / 50f);
 
-            // Adjust distance and height based on speed
             float targetDistance = Mathf.Lerp(distance, speedCameraDistance, speedRatio);
             float targetHeight = Mathf.Lerp(height, speedCameraHeight, speedRatio);
 
             currentDistance = Mathf.Lerp(currentDistance, targetDistance, speedTransitionSpeed * Time.deltaTime);
             currentHeight = Mathf.Lerp(currentHeight, targetHeight, speedTransitionSpeed * Time.deltaTime);
 
-            // FOV adjustments - wider view at higher speeds
             targetFOV = baseFOV + (speedRatio * speedFOVIncrease);
 
-            // Extra FOV and distance during turbo
-            if (bikeController.TurboTimeRemaining > 0)
-            {
-                targetFOV += turboFOVBoost;
-                currentDistance *= 1.2f; // Pull back during turbo
-            }
+            // Removed turbo FOV boost
         }
         else
         {
-            // Fallback when no bike controller is found
             currentDistance = distance;
             currentHeight = height;
             targetFOV = baseFOV;
@@ -227,18 +207,15 @@ public class CameraFollow : MonoBehaviour
 
         if (isManualControl)
         {
-            // Use manual rotation input relative to bike's orientation
             Quaternion manualRotation = Quaternion.Euler(manualRotationInput.y, target.eulerAngles.y + manualRotationInput.x, 0);
             direction = manualRotation * Vector3.back;
         }
         else if (followBikeRotation)
         {
-            // Follow bike's rotation automatically
             direction = -target.forward;
         }
         else
         {
-            // Maintain world-relative position with angle limits
             Vector3 currentDirection = (transform.position - target.position).normalized;
             if (currentDirection == Vector3.zero) currentDirection = Vector3.back;
 
@@ -264,7 +241,6 @@ public class CameraFollow : MonoBehaviour
         Vector3 direction = desiredPosition - target.position;
         float distanceToTarget = direction.magnitude;
 
-        // Main collision check
         if (Physics.Raycast(target.position, direction.normalized, out hit, distanceToTarget, obstacleMask))
         {
             float adjustedDistance = hit.distance - collisionOffset;
@@ -272,7 +248,6 @@ public class CameraFollow : MonoBehaviour
             desiredPosition = target.position + (direction.normalized * adjustedDistance);
         }
 
-        // Wall avoidance - check sides to prevent camera getting stuck
         Vector3 right = transform.right;
         if (Physics.Raycast(desiredPosition, right, 2f, obstacleMask))
         {
@@ -290,7 +265,6 @@ public class CameraFollow : MonoBehaviour
     {
         if (isManualControl)
         {
-            // During manual control, always look at the target
             Vector3 manualLookDirection = target.position - transform.position;
             if (manualLookDirection != Vector3.zero)
             {
@@ -299,16 +273,13 @@ public class CameraFollow : MonoBehaviour
             return;
         }
 
-        // Auto follow - look at target with slight look-ahead
         Vector3 lookAtPoint = target.position;
         if (bikeController != null)
         {
-            // Add look-ahead based on bike's speed and direction
             Vector3 targetVelocityVector = target.forward * (bikeController.CurrentSpeed * lookAheadDistance * 0.5f);
             lookAtPoint += targetVelocityVector;
         }
 
-        // Smoothly rotate camera to look at target
         Vector3 autoLookDirection = lookAtPoint - transform.position;
         if (autoLookDirection != Vector3.zero)
         {
@@ -319,20 +290,16 @@ public class CameraFollow : MonoBehaviour
 
     void UpdateCameraEffects()
     {
-        // Camera shake effects
         if (bikeController != null)
         {
-            // Engine shake based on speed
             float speedRatio = bikeController.SpeedKmh / 50f;
             float baseShake = engineShakeIntensity * speedRatio;
 
-            // Extra shake when landing from jumps
             if (!bikeController.IsGrounded && targetVelocity > 0.1f)
             {
                 currentShakeIntensity = Mathf.Max(currentShakeIntensity, landingShakeForce);
             }
 
-            // Apply shake gradually
             currentShakeIntensity = Mathf.Lerp(currentShakeIntensity, baseShake, shakeDecay * Time.deltaTime);
 
             if (currentShakeIntensity > 0.001f)
@@ -349,7 +316,6 @@ public class CameraFollow : MonoBehaviour
             }
         }
 
-        // Update target velocity for effects
         if (target != null)
         {
             Vector3 currentTargetPosition = target.position;
@@ -380,7 +346,6 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
-    // Helper method to adjust camera distance (can be called from other scripts)
     public void SetDistance(float newDistance)
     {
         distance = Mathf.Clamp(newDistance, minDistance, maxDistance);
@@ -388,7 +353,6 @@ public class CameraFollow : MonoBehaviour
 
     void OnDisable()
     {
-        // Unlock cursor when camera is disabled
         if (Cursor.lockState == CursorLockMode.Locked)
         {
             Cursor.lockState = CursorLockMode.None;
